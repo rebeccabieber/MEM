@@ -1,0 +1,83 @@
+---
+title: "Data wrangling_RB"
+output: html_document
+---
+```{packages etc}
+library(tidyverse)
+install.packages("openxlsx")
+library(openxlsx)
+```
+
+
+```{r setup, include=FALSE}
+mysleep = sleep
+head(mysleep)
+summary(mysleep)
+
+ggplot(mysleep, aes(extra)) + geom_histogram(binwidth = 1)
+
+mysleep$extra_std = as.numeric(scale(mysleep$extra))
+mysleep = mysleep %>% mutate(extra_std_tidy2 = as.numeric(scale(mysleep$extra)))
+
+#practice
+mysleep = mysleep %>% mutate(extra_absqrt = as.numeric(sqrt(abs(mysleep$extra))))
+mysleep = mysleep %>% mutate(extra_cat = as.factor(ifelse(mysleep$extra <= 0, "low", ifelse(mysleep$extra < 3, "medium", "high"))))
+
+summary(mysleep)
+
+````
+
+```{reading in and saving RB data}
+
+setwd("C:\\Users\\Rebecca\\Downloads")
+
+C1.Adapt = read.xlsx('Condition1.xlsx', 1, cols = 1:18)
+C2.Adapt = read.xlsx('Condition2.xlsx', 1, cols = 1:18)
+C3.Adapt = read.xlsx('Condition3.xlsx', 1, cols = 1:18)
+C4.Adapt = read.xlsx('Condition4.xlsx', 1, cols = 1:18)
+C5.Adapt = read.xlsx('Condition5.xlsx', 1, cols = 1:18)
+
+#making 1 large adaptation file
+adapt = rbind(C1.Adapt, C2.Adapt, C3.Adapt, C4.Adapt, C5.Adapt)
+
+#Splitting experiment name column
+adapt = separate(adapt, ExperimentName, into = c("Condition", "File"), sep = "_", extra = "merge")
+adapt$Condition = as.factor(adapt$Condition)
+adapt$File = as.factor(adapt$File)
+adapt$Group = factor(adapt$Group, levels = c("YNH", "YNHS", "YNH-7", "ONH", "ONH-7", "OHI"))
+adapt$Subject = as.factor(adapt$Subject)
+
+
+summary(adapt)
+
+#clean the data, dropping unused groups
+adapt = adapt[!(adapt$Group == "YNH"), ]
+adapt = adapt[!(adapt$Group == "YNHS"), ]
+adapt = adapt[!(adapt$Group == "ONH"), ]
+
+adapt$Group = droplevels(adapt$Group)
+adapt$Group = factor(ifelse(adapt$Group == "YNH-7", "YNH", ifelse(adapt$Group == "ONH-7", "ONH", "OHI")), levels = c("YNH", "ONH", "OHI"))
+
+setwd("C:\\Users\\Rebecca\\Desktop\\Maryland\\PhD\\MEM\\RB sample data")
+write.csv(adapt, file = "adapt.csv")
+
+```
+
+
+```{extension exercise 1 and on}
+adapt = read.csv('adapt.csv')
+head(adapt)
+summary(adapt)
+
+adapt$Subject = as.factor(adapt$Subject)
+
+ggplot(adapt, aes(PercentCorrect)) + geom_histogram(binwidth = 0.1)
+
+adapt = adapt %>% mutate(PercentCorrect_std = as.numeric(scale(adapt$PercentCorrect)))
+ggplot(adapt, aes(PercentCorrect_std)) + geom_histogram(binwidth = 0.1)
+
+adapt = adapt %>% mutate(PercentCorrect_log = as.numeric(log(adapt$PercentCorrect)))
+ggplot(adapt, aes(PercentCorrect_log)) + geom_histogram(binwidth = 0.1)
+
+
+```
